@@ -102,10 +102,10 @@ public fun new(_: &GenreRegistryCap, registry: &mut GenreRegistry, name: String)
     transfer::freeze_object(genre);
 }
 
-/// Derives the object id a `Genre` with the given name would have, without
-/// creating it. Lets clients resolve/check a genre id offline.
-public fun derive_genre_id(self: &GenreRegistry, name: String): ID {
-    derived_object::derive_address(self.id.to_inner(), GenreKey(name)).to_id()
+/// Derives the address a `Genre` with the given name would have, without
+/// creating it. Lets clients resolve/check a genre address offline.
+public fun derive_address(self: &GenreRegistry, name: String): address {
+    derived_object::derive_address(self.id.to_inner(), GenreKey(name))
 }
 
 // === View Functions ===

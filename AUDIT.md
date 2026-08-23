@@ -19,8 +19,9 @@ Verdict: **safe to publish — no exploitable findings.**
   `claim`s a derived object under `GenreKey(name)` (`genre.move:97`) and
   `freeze_object`s the `Genre` (`genre.move:102`): immutable, globally
   readable, one object per canonical name forever.
-- `derive_genre_id` (`genre.move:107`) is a permissionless read-only
-  derivation helper.
+- `derive_address` (`genre.move:107`, renamed from `derive_genre_id` on
+  2026-08-24 — same derivation, returns `address` instead of `ID`) is a
+  permissionless read-only derivation helper.
 
 ## Threat model
 
@@ -61,7 +62,7 @@ Verdict: **safe to publish — no exploitable findings.**
   `test_invalid_name_char_below_range_aborts`).
 - Duplicate `new` with the same name aborts at `claim`
   (`test_create_duplicate_aborts`).
-- `derive_genre_id` requires no cap and cannot create anything — it only
+- `derive_address` requires no cap and cannot create anything — it only
   hashes.
 
 ## Verification
