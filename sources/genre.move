@@ -1,13 +1,12 @@
 // Copyright (c) Miso Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// Genre vocabulary for Miso — a curated, deduplicated set of `Genre` objects.
+/// Genre vocabulary for Miso — a canonical, deduplicated set of `Genre` objects.
 ///
 /// Genre is a classification, not protocol-verifiable state, so it lives in an
 /// extension rather than core. This module owns the **vocabulary**: `Genre`
-/// objects created by a `GenreRegistryCap` holder (Miso), derived by canonical
-/// name so the set stays deduplicated and canonical (no "hip-hop" vs "Hip Hop"
-/// forks).
+/// objects are created permissionlessly and derived by canonical name, so the
+/// set stays deduplicated and canonical (no "hip-hop" vs "Hip Hop" forks).
 ///
 /// Genre *assignment* — classifying a release and its individual tracks — lives
 /// in the `release_genre` module. How a recording is presented and classified
@@ -36,16 +35,8 @@ const MAX_NAME_LENGTH: u64 = 64;
 
 // === Structs ===
 
-/// One-time witness for the genre package.
-public struct GENRE has drop {}
-
 /// Shared registry that parents the derived `Genre` objects.
 public struct GenreRegistry has key {
-    id: UID,
-}
-
-/// Capability authorizing creation of new genres. Held by the vocabulary curator.
-public struct GenreRegistryCap has key, store {
     id: UID,
 }
 
@@ -71,16 +62,16 @@ public struct GenreCreatedEvent has copy, drop {
 
 // === Public Functions ===
 
-fun init(_otw: GENRE, ctx: &mut TxContext) {
+fun init(ctx: &mut TxContext) {
     transfer::share_object(GenreRegistry { id: object::new(ctx) });
-    transfer::public_transfer(GenreRegistryCap { id: object::new(ctx) }, ctx.sender());
 }
 
-/// Creates a new genre in the canonical vocabulary. Cap-gated: only the
-/// registry curator can extend the vocabulary. Derived by canonical name, so
-/// creating the same name twice aborts (dedup is automatic). The `Genre` is
-/// frozen — immutable and globally readable by reference.
-public fun new(_: &GenreRegistryCap, registry: &mut GenreRegistry, name: String) {
+/// Creates a genre in the canonical vocabulary. Creation is permissionless;
+/// the validated canonical name fully determines the derived object, so caller
+/// identity cannot change its id or contents. Creating the same name twice
+/// aborts (dedup is automatic). The `Genre` is frozen — immutable and globally
+/// readable by reference.
+public fun new(registry: &mut GenreRegistry, name: String) {
     assert!(!name.is_empty(), EEmptyName);
     assert!(name.length() <= MAX_NAME_LENGTH, ENameTooLong);
     // Canonical form: uppercase `A`-`Z` and `_` only (e.g. "HIP_HOP"). Keeps the
@@ -119,7 +110,7 @@ public fun name(self: &Genre): &String {
 
 #[test_only]
 public fun init_for_testing(ctx: &mut TxContext) {
-    init(GENRE {}, ctx)
+    init(ctx)
 }
 
 /// Test-only accessor for `GenreCreatedEvent`'s payload — the struct's fields
