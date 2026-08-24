@@ -49,10 +49,15 @@ Verdict: **safe to publish — no exploitable findings.**
   ones are frozen objects). Mitigation is operational (hold the cap in a
   multisig); the team's planned full-stack immutable republish also resets
   this at deploy time. No security impact on existing data.
+  **Disposition (2026-08-24):** accepted — mitigation is operational (cap to
+  be held in a multisig), and the planned full-stack immutable republish
+  resets it at deploy; existing frozen genres are unaffected regardless.
 - **F2 (Informational): no `init` event.** Unlike `miso::release`'s registry,
   `init` emits nothing, so indexers must discover the `GenreRegistry` id from
   the publish transaction's object effects rather than an event. Discoverability
   nit, not a vulnerability.
+  **Disposition (2026-08-24):** accepted — the registry id is discoverable
+  from the publish transaction's object effects; indexer ergonomics only.
 
 ## Edge cases verified
 
