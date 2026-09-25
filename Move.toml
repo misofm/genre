@@ -2,7 +2,7 @@
 name = "genre"
 edition = "2024"
 license = "Apache 2.0"
-authors = ["Miso Labs, Inc. (build@miso.network)"]
+authors = ["Miso Labs, Inc. (build@miso.fm)"]
 
 # The genre vocabulary primitive: a canonical, name-derived set of `Genre` objects.
 # Depends on nothing but the Sui framework by design, so any consumer — a
