@@ -47,12 +47,10 @@ Verdict: **safe to publish — no exploitable findings.**
   but reads and all use of existing immutable genres do not touch the registry.
   **Disposition (2026-08-24):** accepted — genre creation is infrequent and
   deterministic; normal release/party operations use the frozen objects.
-- **F2 (Informational): no `init` event.** Unlike `miso::release`'s registry,
-  `init` emits nothing, so indexers must discover the `GenreRegistry` id from
-  the publish transaction's object effects rather than an event. Discoverability
-  nit, not a vulnerability.
-  **Disposition (2026-08-24):** accepted — the registry id is discoverable
-  from the publish transaction's object effects; indexer ergonomics only.
+- **F2 (Informational): no `init` event.** `init` emits nothing, so
+  indexers find the singleton `GenreRegistry` id in the publish transaction's
+  object effects. **Disposition:** accepted — the stack emits no events for
+  `init` singletons.
 
 ## Edge cases verified
 

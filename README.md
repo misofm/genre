@@ -19,6 +19,21 @@ public fun tag(self: &mut MyObject, genre: &Genre) {
 }
 ```
 
+## Events
+
+An indexer can build the vocabulary from events and the transaction envelope
+alone, with no object reads.
+
+| Event | Fields |
+|---|---|
+| `GenreCreatedEvent` | `genre_id: ID`, `name: String` |
+
+`name` is at most 64 bytes, so the event stays under ~110 bytes (Sui's
+per-event limit is 250 KiB). `init` emits no event: the singleton
+`GenreRegistry` id comes from the publish transaction's object effects. A
+genre's id is `sui::derived_object::derive_address(registry_id, GenreKey(name))`
+(`genre::derive_address`); genres are frozen, so nothing else is ever emitted.
+
 ## License
 
 Apache-2.0

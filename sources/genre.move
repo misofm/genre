@@ -54,32 +54,16 @@ public struct GenreKey(String) has copy, drop, store;
 
 // === Events ===
 
-/// Emitted once when package initialization creates and shares the canonical
-/// genre registry.
-public struct GenreRegistryCreatedEvent has copy, drop {
-    registry_id: address,
-    initializer: address,
-    is_shared: bool,
-}
-
-/// Emitted when a genre is added to the vocabulary.
+/// Emitted when a genre is added to the vocabulary, with its canonical name.
 public struct GenreCreatedEvent has copy, drop {
-    registry_id: address,
-    genre_id: address,
-    name: vector<u8>,
-    is_frozen: bool,
+    genre_id: ID,
+    name: String,
 }
 
 // === Public Functions ===
 
 fun init(ctx: &mut TxContext) {
-    let registry = GenreRegistry { id: object::new(ctx) };
-    let registry_id = object::id_address(&registry);
-    let initializer = ctx.sender();
-    let is_shared = true;
-
-    transfer::share_object(registry);
-    emit(GenreRegistryCreatedEvent { registry_id, initializer, is_shared });
+    transfer::share_object(GenreRegistry { id: object::new(ctx) });
 }
 
 /// Creates a genre in the canonical vocabulary. Creation is permissionless;
@@ -105,13 +89,11 @@ public fun new(registry: &mut GenreRegistry, name: String) {
         name: name_copy,
     };
 
-    let registry_id = object::id_address(registry);
-    let genre_id = object::id_address(&genre);
-    let name = *genre.name().as_bytes();
-    let is_frozen = true;
+    let genre_id = object::id(&genre);
+    let name = genre.name;
 
     transfer::freeze_object(genre);
-    emit(GenreCreatedEvent { registry_id, genre_id, name, is_frozen });
+    emit(GenreCreatedEvent { genre_id, name });
 }
 
 /// Derives the address a `Genre` with the given name would have, without
@@ -134,28 +116,9 @@ public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx)
 }
 
-/// Test-only accessor for the primitive `GenreRegistryCreatedEvent` payload in
-/// declaration order.
+/// Unpacks a `GenreCreatedEvent` (fields are module-private) for test
+/// assertions.
 #[test_only]
-public fun genre_registry_created_event_fields(
-    event: &GenreRegistryCreatedEvent,
-): (address, address, bool) {
-    (event.registry_id, event.initializer, event.is_shared)
-}
-
-/// Test-only accessor for the primitive `GenreCreatedEvent` payload in
-/// declaration order.
-#[test_only]
-public fun genre_created_event_fields(
-    event: &GenreCreatedEvent,
-): (address, address, vector<u8>, bool) {
-    (event.registry_id, event.genre_id, event.name, event.is_frozen)
-}
-
-/// Compatibility accessor for the legacy `GenreCreatedEvent` payload shape.
-/// The event now stores primitive addresses and bytes, so convert them back to
-/// the prior `ID` and `String` values for existing test callers.
-#[test_only]
-public fun created_event_fields(event: &GenreCreatedEvent): (ID, String) {
-    (event.genre_id.to_id(), string::utf8(event.name))
+public fun genre_created_event_fields(event: &GenreCreatedEvent): (ID, String) {
+    (event.genre_id, event.name)
 }
