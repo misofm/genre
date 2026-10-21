@@ -15,7 +15,6 @@ const OTHER_CREATOR: address = @0xB0;
 
 // === Helpers ===
 
-/// Creates a genre in the permissionless registry and returns its derived id.
 fun create_genre(scenario: &Scenario, name: vector<u8>): ID {
     let mut registry = scenario.take_shared<GenreRegistry>();
     let id = g::derive_address(&registry, name.to_string()).to_id();
@@ -46,16 +45,14 @@ fun create_genre_and_derive() {
     scenario.next_tx(CREATOR);
     let genre_id = create_genre(&scenario, b"HIP_HOP");
 
-    // `new` emits exactly one `GenreCreatedEvent` with the full payload pinned.
-    // Read back in the same transaction as the emit — `test_scenario` clears
-    // the recorded event log across a `next_tx` boundary.
+    // Read in the emitting transaction: `test_scenario` clears the event log at
+    // `next_tx`.
     let events = event::events_by_type<GenreCreatedEvent>();
     assert_eq!(events.length(), 1);
     let (event_genre_id, event_name) = g::genre_created_event_fields(&events[0]);
     assert_eq!(event_genre_id, genre_id);
     assert_eq!(event_name, b"HIP_HOP".to_string());
 
-    // The frozen Genre lives at the derived id, with the canonical name.
     scenario.next_tx(CREATOR);
     let genre = scenario.take_immutable_by_id<Genre>(genre_id);
     assert_eq!(object::id(&genre), genre_id);
@@ -162,8 +159,6 @@ fun invalid_name_char_aborts() {
     scenario.end();
 }
 
-/// Like `invalid_name_char_aborts`, but the offending byte is below 'A' (0x41),
-/// covering the other side of the range check.
 #[test, expected_failure(abort_code = g::EInvalidNameChar)]
 fun invalid_name_char_below_range_aborts() {
     let mut scenario = ts::begin(CREATOR);
