@@ -34,6 +34,16 @@ per-event limit is 250 KiB). `init` emits no event: the singleton
 genre's id is `sui::derived_object::derive_address(registry_id, GenreKey(name))`
 (`genre::derive_address`); genres are frozen, so nothing else is ever emitted.
 
+## Errors
+
+| Code | Constant | Meaning |
+|---|---|---|
+| 0 | `EEmptyName` | Name is empty |
+| 1 | `ENameTooLong` | Name is longer than 64 bytes |
+| 2 | `EInvalidNameChar` | Name has a byte other than `A`-`Z` or `_` |
+
+A duplicate name aborts in `sui::derived_object` (`EObjectAlreadyExists`).
+
 ## License
 
 Apache-2.0

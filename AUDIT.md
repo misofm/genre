@@ -68,3 +68,12 @@ Verdict: **safe to publish — no exploitable findings.**
 - **7/7 unit tests pass** (`sui move test --warnings-are-errors`, sui 1.77.2):
   happy path + derive, cross-sender creation, duplicate abort, and the
   empty/too-long/invalid-char matrix.
+
+## Event and style pass — 2026-10-21
+
+**Toolchain:** sui 1.82.1 · **Verification:** 10/10 unit tests, 0 warnings,
+100% coverage. Validation logic is unchanged.
+
+- `GenreCreatedEvent` is `{ genre_id: ID, name: String }`; `init` emits no
+  event.
+- Error codes are 0–2 in declaration order (README lists them).

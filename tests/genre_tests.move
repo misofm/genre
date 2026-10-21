@@ -4,14 +4,11 @@
 #[test_only]
 module genre::genre_tests;
 
-// Alias the module so the bare address `genre` resolves in
-// `#[expected_failure(location = genre::genre)]` (avoids the addr==module
-// name collision).
-use genre::genre as g;
-use genre::genre::{GenreRegistry, Genre, GenreCreatedEvent};
 use std::unit_test::assert_eq;
+use sui::derived_object;
 use sui::event;
 use sui::test_scenario::{Self as ts, Scenario};
+use genre::genre::{Self as g, GenreRegistry, Genre, GenreCreatedEvent};
 
 const CREATOR: address = @0xC0;
 const OTHER_CREATOR: address = @0xB0;
@@ -130,7 +127,7 @@ fun view_functions_emit_nothing() {
     scenario.end();
 }
 
-#[test, expected_failure]
+#[test, expected_failure(abort_code = derived_object::EObjectAlreadyExists)]
 fun duplicate_genre_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
@@ -145,7 +142,7 @@ fun duplicate_genre_aborts() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 20, location = genre::genre)] // EEmptyName
+#[test, expected_failure(abort_code = g::EEmptyName)]
 fun empty_name_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
@@ -155,7 +152,7 @@ fun empty_name_aborts() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 22, location = genre::genre)] // EInvalidNameChar
+#[test, expected_failure(abort_code = g::EInvalidNameChar)]
 fun invalid_name_char_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
@@ -165,10 +162,9 @@ fun invalid_name_char_aborts() {
     scenario.end();
 }
 
-// Same error as `invalid_name_char_aborts`, but the offending byte is
-// below 'A' (0x41) rather than above 'Z' (0x5A) — covers both sides of the
-// `>= 0x41 && <= 0x5A` short-circuit.
-#[test, expected_failure(abort_code = 22, location = genre::genre)] // EInvalidNameChar
+/// Like `invalid_name_char_aborts`, but the offending byte is below 'A' (0x41),
+/// covering the other side of the range check.
+#[test, expected_failure(abort_code = g::EInvalidNameChar)]
 fun invalid_name_char_below_range_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
@@ -178,7 +174,7 @@ fun invalid_name_char_below_range_aborts() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 21, location = genre::genre)] // ENameTooLong
+#[test, expected_failure(abort_code = g::ENameTooLong)]
 fun name_too_long_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
