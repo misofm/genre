@@ -1,7 +1,7 @@
 [package]
 name = "genre"
 edition = "2024"
-license = "Apache 2.0"
+license = "FSL-1.1-ALv2"
 authors = ["Miso Labs, Inc. (build@miso.fm)"]
 
 # The genre vocabulary primitive: a canonical, name-derived set of `Genre` objects.
