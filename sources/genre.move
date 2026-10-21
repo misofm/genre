@@ -70,8 +70,8 @@ public fun new(registry: &mut GenreRegistry, name: String) {
 
 // === View Functions ===
 
-public fun derive_address(self: &GenreRegistry, name: String): address {
-    derived_object::derive_address(self.id.to_inner(), GenreKey(name))
+public fun derive_address(registry: &GenreRegistry, name: String): address {
+    derived_object::derive_address(registry.id.to_inner(), GenreKey(name))
 }
 
 public fun name(self: &Genre): &String {
