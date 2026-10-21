@@ -45,8 +45,6 @@ fun create_genre_and_derive() {
     scenario.next_tx(CREATOR);
     let genre_id = create_genre(&scenario, b"HIP_HOP");
 
-    // Read in the emitting transaction: `test_scenario` clears the event log at
-    // `next_tx`.
     let events = event::events_by_type<GenreCreatedEvent>();
     assert_eq!(events.length(), 1);
     let (event_genre_id, event_name) = g::genre_created_event_fields(&events[0]);
@@ -129,12 +127,10 @@ fun duplicate_genre_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
 
-    // Both creates on one registry borrow so the second hits the real dedup
-    // abort (derived-object id already claimed), not test-scenario inventory.
     scenario.next_tx(CREATOR);
     let mut registry = scenario.take_shared<GenreRegistry>();
     g::new(&mut registry, b"HIP_HOP".to_string());
-    g::new(&mut registry, b"HIP_HOP".to_string()); // same name -> aborts
+    g::new(&mut registry, b"HIP_HOP".to_string());
     ts::return_shared(registry);
     scenario.end();
 }
@@ -155,7 +151,7 @@ fun invalid_name_char_aborts() {
     g::init_for_testing(scenario.ctx());
 
     scenario.next_tx(CREATOR);
-    create_genre(&scenario, b"Hip-Hop"); // lowercase + hyphen -> rejected
+    create_genre(&scenario, b"Hip-Hop");
     scenario.end();
 }
 
@@ -165,7 +161,7 @@ fun invalid_name_char_below_range_aborts() {
     g::init_for_testing(scenario.ctx());
 
     scenario.next_tx(CREATOR);
-    create_genre(&scenario, b"1HIPHOP"); // digit -> below 'A', rejected
+    create_genre(&scenario, b"1HIPHOP");
     scenario.end();
 }
 
@@ -175,7 +171,6 @@ fun name_too_long_aborts() {
     g::init_for_testing(scenario.ctx());
 
     scenario.next_tx(CREATOR);
-    // 65 'A's — one over the 64-byte MAX_NAME_LENGTH.
     let mut name = vector[];
     65u64.do!(|_| name.push_back(0x41u8));
     create_genre(&scenario, name);

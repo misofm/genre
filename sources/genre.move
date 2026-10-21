@@ -1,12 +1,6 @@
 // Copyright (c) Miso Labs, Inc.
 // SPDX-License-Identifier: FSL-1.1-ALv2
 
-/// Genre vocabulary for Miso: a canonical, deduplicated set of `Genre` objects.
-///
-/// `Genre` objects are created permissionlessly, frozen, and derived from the
-/// `GenreRegistry` by canonical name (`A`-`Z` and `_`), so each name maps to
-/// one object and the vocabulary cannot fork ("hip-hop" vs "Hip Hop"). Genre
-/// assignment lives in consumer packages such as `release_genre`.
 module genre::genre;
 
 // === Imports ===
@@ -23,7 +17,6 @@ const EInvalidNameChar: u64 = 2;
 
 // === Constants ===
 
-/// In bytes.
 const MAX_NAME_LENGTH: u64 = 64;
 
 // === Structs ===
@@ -52,11 +45,9 @@ fun init(ctx: &mut TxContext) {
     transfer::share_object(GenreRegistry { id: object::new(ctx) });
 }
 
-/// Permissionless. A second `new` for the same name aborts in `derived_object`.
 public fun new(registry: &mut GenreRegistry, name: String) {
     assert!(!name.is_empty(), EEmptyName);
     assert!(name.length() <= MAX_NAME_LENGTH, ENameTooLong);
-    // Canonical form: uppercase `A`-`Z` and `_` only (e.g. "HIP_HOP").
     assert!(
         name.as_bytes().all!(|c| (*c >= 0x41 && *c <= 0x5A) || *c == 0x5F),
         EInvalidNameChar,
