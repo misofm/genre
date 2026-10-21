@@ -165,6 +165,61 @@ fun invalid_name_char_below_range_aborts() {
     scenario.end();
 }
 
+#[test, expected_failure(abort_code = g::EMisplacedUnderscore)]
+fun leading_underscore_aborts() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(CREATOR);
+    create_genre(&scenario, b"_HIP_HOP");
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = g::EMisplacedUnderscore)]
+fun trailing_underscore_aborts() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(CREATOR);
+    create_genre(&scenario, b"HIP_HOP_");
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = g::EMisplacedUnderscore)]
+fun consecutive_underscores_abort() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(CREATOR);
+    create_genre(&scenario, b"HIP__HOP");
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = g::EMisplacedUnderscore)]
+fun lone_underscore_aborts() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(CREATOR);
+    create_genre(&scenario, b"_");
+    scenario.end();
+}
+
+#[test]
+fun multiple_single_underscores_are_valid() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(CREATOR);
+    let genre_id = create_genre(&scenario, b"DRUM_AND_BASS");
+
+    scenario.next_tx(CREATOR);
+    let genre = scenario.take_immutable_by_id<Genre>(genre_id);
+    assert_eq!(*g::name(&genre), b"DRUM_AND_BASS".to_string());
+    ts::return_immutable(genre);
+    scenario.end();
+}
+
 #[test, expected_failure(abort_code = g::ENameTooLong)]
 fun name_too_long_aborts() {
     let mut scenario = ts::begin(CREATOR);

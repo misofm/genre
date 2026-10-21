@@ -14,6 +14,7 @@ use sui::event::emit;
 const EEmptyName: u64 = 0;
 const ENameTooLong: u64 = 1;
 const EInvalidNameChar: u64 = 2;
+const EMisplacedUnderscore: u64 = 3;
 
 // === Constants ===
 
@@ -48,10 +49,14 @@ fun init(ctx: &mut TxContext) {
 public fun new(registry: &mut GenreRegistry, name: String) {
     assert!(!name.is_empty(), EEmptyName);
     assert!(name.length() <= MAX_NAME_LENGTH, ENameTooLong);
-    assert!(
-        name.as_bytes().all!(|c| (*c >= 0x41 && *c <= 0x5A) || *c == 0x5F),
-        EInvalidNameChar,
-    );
+    let mut previous_underscore = true;
+    name.as_bytes().do_ref!(|c| {
+        let underscore = *c == 0x5F;
+        assert!(underscore || (*c >= 0x41 && *c <= 0x5A), EInvalidNameChar);
+        assert!(!(underscore && previous_underscore), EMisplacedUnderscore);
+        previous_underscore = underscore;
+    });
+    assert!(!previous_underscore, EMisplacedUnderscore);
 
     let genre = Genre { id: claim(&mut registry.id, GenreKey(name)), name };
     let genre_id = object::id(&genre);

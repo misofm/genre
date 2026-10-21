@@ -6,7 +6,7 @@
 
 Genres are values other packages point at, never strings they copy: an extension stores a `Genre` id, and display names resolve through the object. Creation is permissionless because the validated name completely determines both the immutable object and its derived id; the caller contributes no authority or mutable data.
 
-Names are validated on creation — non-empty, length-bounded, and restricted to a canonical character range — so the vocabulary cannot accumulate near-duplicate spellings.
+Names are validated on creation: non-empty, at most 64 bytes, and uppercase words `A`-`Z` joined by single underscores (`DRUM_AND_BASS`), so underscore variants like `_HIP_HOP` or `HIP__HOP` cannot exist. Spelling variants such as `HIPHOP` and `HIP_HOP` are still distinct genres; canonical naming is a curation concern.
 
 ## Usage
 
@@ -41,6 +41,7 @@ genre's id is `sui::derived_object::derive_address(registry_id, GenreKey(name))`
 | 0 | `EEmptyName` | Name is empty |
 | 1 | `ENameTooLong` | Name is longer than 64 bytes |
 | 2 | `EInvalidNameChar` | Name has a byte other than `A`-`Z` or `_` |
+| 3 | `EMisplacedUnderscore` | Name starts or ends with `_`, or has two in a row |
 
 A duplicate name aborts in `sui::derived_object` (`EObjectAlreadyExists`).
 
