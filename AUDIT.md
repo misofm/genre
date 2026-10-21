@@ -1,79 +1,45 @@
 # Security Audit — `genre`
 
-**Revision:** working tree @ 2026-08-24. No dependencies beyond the Sui
-framework. **Date:** 2026-08-24 · **Toolchain:** sui
-1.77.2-51d177ad7d65
-
-Audit of `genre` (`sources/genre.move`), the canonical genre *vocabulary*
-primitive: a shared `GenreRegistry` parenting permissionlessly created,
-name-derived, frozen `Genre` objects.
-Verdict: **safe to publish — no exploitable findings.**
+Audited at `4c47bd1cd78c4bf1dad0e72e6598060fe8a553cd` (2026-10-21). Scope: package `genre`, module `genre::genre` (`sources/genre.move`); depends only on the Sui framework.
 
 ## What it does
 
-- `init` creates and shares the singleton `GenreRegistry`; it creates no admin
-  capability.
-- `new` is permissionless. It validates the name (non-empty, ≤ 64
-  bytes, charset restricted to `A`-`Z` and `_`), then `claim`s a derived
-  object under `GenreKey(name)` and `freeze_object`s the `Genre`: immutable, globally
-  readable, one object per canonical name forever.
-- `derive_address` (renamed from `derive_genre_id` on
-  2026-08-24 — same derivation, returns `address` instead of `ID`) is a
-  permissionless read-only derivation helper.
+A shared singleton `GenreRegistry` parents permissionlessly created, name-derived, frozen `Genre` objects. See [README](./README.md).
 
-## Threat model
+## Trust model
 
-- **Vocabulary extension / squatting:** any caller can create a validated name,
-  but caller identity contributes nothing to the result. The canonical name
-  fixes both the immutable contents and derived id, so creating a name first
-  cannot grant ownership, redirect resolution, or alter later assignments.
-- **Duplicate/forked names ("hip-hop" vs "Hip Hop"):** the charset gate
-  forces a single canonical form (uppercase + `_`), and
-  name-derived addressing makes a second `new` with the same name abort in
-  `derived_object::claim` (address already claimed). Dedup is structural, not
-  a remembered check.
-- **Post-creation mutation:** `Genre` is frozen and has no
-  mutable accessors — impossible.
-- **DoS:** names are bounded to 64 bytes and each canonical name can be claimed
-  only once. Permissionless creation does contend on `&mut GenreRegistry`, but
-  it cannot modify or remove an existing `Genre`.
-- **`string::utf8(*name.as_bytes())` copy:** cannot abort or
-  mangle — bytes were just validated as pure ASCII, a UTF-8 subset.
+- **Publisher:** `init` shares the `GenreRegistry` (`genre.move:44-46`). No admin cap exists; the publisher has no further powers.
+- **Anyone:** may call `new` (`genre.move:48-60`) with any name that passes validation. The caller contributes nothing but the name, which fully determines the object's contents and its derived id.
+- **Nobody** can mutate, transfer, wrap or delete a `Genre` (`key` only, frozen at `genre.move:58`), or remove or replace the registry. The registry's `UID` is private, so no other package can `claim` under it.
 
 ## Findings
 
-- **F1 (Informational): permissionless shared-object contention.** Every new
-  genre needs mutable access to the singleton registry. Creation may contend,
-  but reads and all use of existing immutable genres do not touch the registry.
-  **Disposition (2026-08-24):** accepted — genre creation is infrequent and
-  deterministic; normal release/party operations use the frozen objects.
-- **F2 (Informational): no `init` event.** `init` emits nothing, so
-  indexers find the singleton `GenreRegistry` id in the publish transaction's
-  object effects. **Disposition:** accepted — the stack emits no events for
-  `init` singletons.
+**G-1 · Low · Open — underscore placement is not canonicalized.** The charset check (`genre.move:51-54`) allows `_` anywhere and in any count, so `HIPHOP`, `HIP_HOP`, `HIP__HOP`, `_HIP_HOP_` and `_` are all distinct, valid, permanent genres (verified by probe). The README's claim that the vocabulary "cannot accumulate near-duplicate spellings" does not hold. Since creation is permissionless and genres are frozen, such variants can never be removed. Suggested fix: reject leading, trailing and consecutive underscores.
 
-## Edge cases verified
+**G-2 · Info · Accepted — vocabulary is open.** Any well-formed word (`ASDF`) becomes a permanent genre. Which genres are shown or allowed is a consumer or curation concern, not something this package enforces.
 
-- Empty name, >64-byte name, lowercase/digit/space/punctuation names — all
-  abort (`EEmptyName`/`ENameTooLong`/`EInvalidNameChar`), including the
-  boundary characters just outside `0x41..=0x5A` (`invalid_name_char_below_range_aborts`).
-- Duplicate `new` with the same name aborts at `claim`
-  (`duplicate_genre_aborts`).
-- A sender other than the initializer can create a genre
-  (`a_sender_other_than_the_initializer_can_create`).
-- `derive_address` cannot create anything — it only hashes.
+**G-3 · Info · Accepted — shared-object contention on creation.** Each `new` takes `&mut GenreRegistry` (`genre.move:48`). Reads and use of existing frozen genres never touch the registry.
+
+**G-4 · Info · Accepted — `init` emits no event.** Indexers take the registry id from the publish transaction's effects (`genre.move:44-46`).
+
+## Checked, no finding
+
+- Validation order is empty → length → charset (`genre.move:49-54`). A 65-byte lowercase name aborts `ENameTooLong`, not `EInvalidNameChar`. Each abort code is reachable (unit tests plus probes).
+- Charset boundaries: `@` (0x40), `[` (0x5B) and `` ` `` (0x60) abort, as does a multibyte UTF-8 name. A 64-byte name is accepted (probes).
+- `String::length` counts bytes, so the 64-byte bound and the README's event-size note hold (`genre.move:50`).
+- Duplicates abort in `derived_object::claim` with `EObjectAlreadyExists` (`genre.move:56`; `duplicate_genre_aborts`). Genres are never deleted, so no name can be re-claimed.
+- `derive_address` (`genre.move:64-66`) matches the id of the claimed object (`create_genre_and_derive`). It does not validate, so an invalid name yields an address with no object behind it. That is harmless because consumers take `&Genre`, which is type-checked.
+- There is exactly one registry (from `init`), so the derived ids form one namespace with no bypass.
+- `GenreCreatedEvent` carries the id and name. Exactly one is emitted per `new`, in call order, and views emit nothing (tests).
+- Limits: one object and one event per `new`; names are at most 64 bytes. The per-transaction event limit caps batch creation at about 1,024 genres per transaction.
+
+## Operational requirements
+
+- `Published.toml` records mainnet and testnet publications from before the 2026-10-21 event and style changes. The current source must be published fresh before integrators rely on the `GenreCreatedEvent { genre_id, name }` shape.
+- Tooling should create genres in canonical form, because the contract accepts underscore variants (G-1).
 
 ## Verification
 
-- **7/7 unit tests pass** (`sui move test --warnings-are-errors`, sui 1.77.2):
-  happy path + derive, cross-sender creation, duplicate abort, and the
-  empty/too-long/invalid-char matrix.
-
-## Event and style pass — 2026-10-21
-
-**Toolchain:** sui 1.82.1 · **Verification:** 10/10 unit tests, 0 warnings,
-100% coverage. Validation logic is unchanged.
-
-- `GenreCreatedEvent` is `{ genre_id: ID, name: String }`; `init` emits no
-  event.
-- Error codes are 0–2 in declaration order (README lists them).
+- `sui move test --coverage`: 10/10 pass. `sui move coverage summary`: 100.00% (`genre`).
+- `sui move build -e mainnet --warnings-are-errors` and `-e testnet`: both succeed with no warnings (sui 1.82.1).
+- 10 throwaway probe tests (charset boundaries, max length, abort order, near-duplicate names, unvalidated derive, frozen take) all passed. They were not committed.
