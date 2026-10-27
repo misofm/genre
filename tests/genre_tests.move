@@ -30,7 +30,6 @@ fun init_shares_registry_without_event() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
     assert_eq!(event::num_events(), 0);
-
     scenario.next_tx(OTHER_CREATOR);
     let registry = scenario.take_shared<GenreRegistry>();
     ts::return_shared(registry);
@@ -41,22 +40,18 @@ fun init_shares_registry_without_event() {
 fun create_genre_and_derive() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let genre_id = create_genre(&scenario, b"HIP_HOP");
-
     let events = event::events_by_type<GenreCreatedEvent>();
     assert_eq!(events.length(), 1);
     let (event_genre_id, event_name) = g::genre_created_event_fields(&events[0]);
     assert_eq!(event_genre_id, genre_id);
     assert_eq!(event_name, b"HIP_HOP".to_string());
-
     scenario.next_tx(CREATOR);
     let genre = scenario.take_immutable_by_id<Genre>(genre_id);
     assert_eq!(object::id(&genre), genre_id);
     assert_eq!(*g::name(&genre), b"HIP_HOP".to_string());
     ts::return_immutable(genre);
-
     scenario.end();
 }
 
@@ -64,7 +59,6 @@ fun create_genre_and_derive() {
 fun two_creates_emit_once_each_in_order() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let mut registry = scenario.take_shared<GenreRegistry>();
     let first_id = g::derive_address(&registry, b"HIP_HOP".to_string()).to_id();
@@ -72,17 +66,14 @@ fun two_creates_emit_once_each_in_order() {
     let second_id = g::derive_address(&registry, b"ELECTRONIC".to_string()).to_id();
     g::new(&mut registry, b"ELECTRONIC".to_string());
     ts::return_shared(registry);
-
     let events = event::events_by_type<GenreCreatedEvent>();
     assert_eq!(events.length(), 2);
-
     let (first_genre_id, first_name) = g::genre_created_event_fields(&events[0]);
     let (second_genre_id, second_name) = g::genre_created_event_fields(&events[1]);
     assert_eq!(first_genre_id, first_id);
     assert_eq!(second_genre_id, second_id);
     assert_eq!(first_name, b"HIP_HOP".to_string());
     assert_eq!(second_name, b"ELECTRONIC".to_string());
-
     scenario.end();
 }
 
@@ -90,15 +81,12 @@ fun two_creates_emit_once_each_in_order() {
 fun a_sender_other_than_the_initializer_can_create() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(OTHER_CREATOR);
     let genre_id = create_genre(&scenario, b"ELECTRONIC");
-
     scenario.next_tx(OTHER_CREATOR);
     let genre = scenario.take_immutable_by_id<Genre>(genre_id);
     assert_eq!(*g::name(&genre), b"ELECTRONIC".to_string());
     ts::return_immutable(genre);
-
     scenario.end();
 }
 
@@ -106,10 +94,8 @@ fun a_sender_other_than_the_initializer_can_create() {
 fun view_functions_emit_nothing() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let genre_id = create_genre(&scenario, b"AMBIENT");
-
     scenario.next_tx(OTHER_CREATOR);
     let mut registry = scenario.take_shared<GenreRegistry>();
     assert_eq!(g::derive_address(&registry, b"AMBIENT".to_string()).to_id(), genre_id);
@@ -117,7 +103,6 @@ fun view_functions_emit_nothing() {
     assert_eq!(*g::name(&genre), b"AMBIENT".to_string());
     ts::return_immutable(genre);
     ts::return_shared(registry);
-
     assert_eq!(event::num_events(), 0);
     scenario.end();
 }
@@ -126,7 +111,6 @@ fun view_functions_emit_nothing() {
 fun duplicate_genre_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let mut registry = scenario.take_shared<GenreRegistry>();
     g::new(&mut registry, b"HIP_HOP".to_string());
@@ -139,7 +123,6 @@ fun duplicate_genre_aborts() {
 fun empty_name_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"");
     scenario.end();
@@ -149,7 +132,6 @@ fun empty_name_aborts() {
 fun invalid_name_char_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"Hip-Hop");
     scenario.end();
@@ -159,7 +141,6 @@ fun invalid_name_char_aborts() {
 fun invalid_name_char_below_range_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"1HIPHOP");
     scenario.end();
@@ -169,7 +150,6 @@ fun invalid_name_char_below_range_aborts() {
 fun leading_underscore_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"_HIP_HOP");
     scenario.end();
@@ -179,7 +159,6 @@ fun leading_underscore_aborts() {
 fun trailing_underscore_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"HIP_HOP_");
     scenario.end();
@@ -189,7 +168,6 @@ fun trailing_underscore_aborts() {
 fun consecutive_underscores_abort() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"HIP__HOP");
     scenario.end();
@@ -199,7 +177,6 @@ fun consecutive_underscores_abort() {
 fun lone_underscore_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     create_genre(&scenario, b"_");
     scenario.end();
@@ -209,10 +186,8 @@ fun lone_underscore_aborts() {
 fun multiple_single_underscores_are_valid() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let genre_id = create_genre(&scenario, b"DRUM_AND_BASS");
-
     scenario.next_tx(CREATOR);
     let genre = scenario.take_immutable_by_id<Genre>(genre_id);
     assert_eq!(*g::name(&genre), b"DRUM_AND_BASS".to_string());
@@ -224,7 +199,6 @@ fun multiple_single_underscores_are_valid() {
 fun name_too_long_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
-
     scenario.next_tx(CREATOR);
     let mut name = vector[];
     65u64.do!(|_| name.push_back(0x41u8));

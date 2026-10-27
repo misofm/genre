@@ -57,7 +57,6 @@ public fun new(registry: &mut GenreRegistry, name: String) {
         previous_underscore = underscore;
     });
     assert!(!previous_underscore, EMisplacedUnderscore);
-
     let genre = Genre { id: claim(&mut registry.id, GenreKey(name)), name };
     let genre_id = object::id(&genre);
     transfer::freeze_object(genre);
