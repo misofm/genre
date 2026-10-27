@@ -56,6 +56,7 @@ fun create_genre_and_derive() {
     assert_eq!(object::id(&genre), genre_id);
     assert_eq!(*g::name(&genre), b"HIP_HOP".to_string());
     ts::return_immutable(genre);
+
     scenario.end();
 }
 
@@ -81,6 +82,7 @@ fun two_creates_emit_once_each_in_order() {
     assert_eq!(second_genre_id, second_id);
     assert_eq!(first_name, b"HIP_HOP".to_string());
     assert_eq!(second_name, b"ELECTRONIC".to_string());
+
     scenario.end();
 }
 
@@ -96,6 +98,7 @@ fun a_sender_other_than_the_initializer_can_create() {
     let genre = scenario.take_immutable_by_id<Genre>(genre_id);
     assert_eq!(*g::name(&genre), b"ELECTRONIC".to_string());
     ts::return_immutable(genre);
+
     scenario.end();
 }
 
