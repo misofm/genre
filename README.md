@@ -1,3 +1,5 @@
+> **Moved.** This repository is archived. Its packages now live in [`misofm/framework`](https://github.com/misofm/framework/tree/main/lib/genre) under `lib/genre/`.
+
 # `genre`
 
 > A canonical genre vocabulary as first-class on-chain objects. The shared primitive behind release and party genre tagging.
